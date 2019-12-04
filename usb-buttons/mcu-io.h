@@ -15,15 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-const byte BUFFER_SIZE                  = 32;
 
 const uint8_t INPUT_NONE    = 0;
 const uint8_t INPUT_AXIS    = 1;
 const uint8_t INPUT_BUTTON  = 2;
+const uint8_t INPUT_TOGGLE  = 3;
+const uint8_t INPUT_ENCODER = 4;
+
+/*
+ * class for buttons, we'll use an array of these to store some data like is the shit
+ * pressed and whatnot...  So we know when to hold and when to release a button.
+ */
+class button_list {
+    public:
+        void set_pressed(bool is_it) {
+            _pressed = is_it;
+        }
+
+        bool get_pressed(void) { return _pressed; }
+
+        bool _pressed;
+};
 
 class input_data {
     private:
-        char input_buffer[BUFFER_SIZE];
+        char input_buffer[32];
         byte bytes_received             = 0;
         bool is_reading                 = false;
         int8_t _button                  = 0;
@@ -31,8 +47,15 @@ class input_data {
         int8_t _type                    = 0;
 
     public:
+        button_list buttons[26];
         const char START_MARKER         = '<';
         const char END_MARKER           = '>';
+
+        void clear_input(void) {
+            _button                     = 0;
+            _value                      = 0;
+            _type                       = INPUT_NONE;
+        }
 
         int16_t get_value() { return _value; }
         void set_value(int16_t value) { _value = value; }
@@ -43,11 +66,9 @@ class input_data {
         int8_t get_type() { return _type; }
         void set_type(int8_t type) { _type = type; }
 
-        void send_input(int8_t type, int8_t button, int16_t value) {
-            if ((button > 0 || button < 10) && value < 1) {
-                return;
-            }
+        bool buffer_null(void) { if (input_buffer == '\0') { return true; } return false; }
 
+        void send_input(int8_t type, int8_t button, int16_t value) {
             Serial.print("<");
             Serial.print(type);
             Serial.print(",");
@@ -63,14 +84,20 @@ class input_data {
             char rc;
 
             while (Serial1.available() > 0) {
+                //clear_input();
                 rc = Serial1.read();
-        
+
+                /* Ignore anything that isn't what we want */
+                if (is_reading == false && rc != START_MARKER) {
+                    break;
+                }
+
                 if (is_reading == true) {
                     if (rc != END_MARKER) {
                         input_buffer[bytes_received] = rc;
                         bytes_received++;
-                        if (bytes_received >= BUFFER_SIZE) {
-                            bytes_received = BUFFER_SIZE - 1;
+                        if (bytes_received >= 32) {
+                            bytes_received = 32 - 1;
                         }
                     } else {
                         parse_data();
@@ -88,6 +115,7 @@ class input_data {
             char *input_stream;
             int axis_value = 0;
             int prev_value = _value;
+            uint8_t pressed = 0;
 
             input_stream = strtok(input_buffer, ",");
             _type = atoi(input_stream);
@@ -97,17 +125,19 @@ class input_data {
 
             input_stream = strtok(NULL, ",");
             axis_value = atoi(input_stream);
-            if (axis_value <= 1023) {
+            if (axis_value <= 1023 && axis_value >= 0) {
                 _value = axis_value;
             }
 
-            //if (_value ) {
-            //    
-            //}
-            if (_type == INPUT_NONE && _value == 1024) {
-                _type = 0;
-                _button = 0;
-                _value = 0;
+            input_stream = strtok(NULL, ",");
+            pressed = atoi(input_stream);
+
+            if (pressed == 1 && _button != 0) {
+                buttons[_button].set_pressed(true);
+            }
+
+            if (pressed == 0 && _button != 0) {
+                buttons[_button].set_pressed(false);
             }
         }
 };

@@ -15,6 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 const byte BUFFER_SIZE                  = 32;
 
 class input_data {
@@ -30,6 +31,15 @@ class input_data {
         const byte START_MARKER         = '<';
         const byte END_MARKER           = '>';
 
+        void clear_input(void) {
+            input_buffer[BUFFER_SIZE]   = '\0';
+            bytes_received              = 0;
+            _button                     = 0;
+            _value                      = 0;
+            _type                       = 0;
+            is_reading                  = false;
+        }
+
         int16_t get_value() { return _value; }
         void set_value(int16_t value) { _value = value; }
 
@@ -39,21 +49,26 @@ class input_data {
         int8_t get_type() { return _type; }
         void set_type(int8_t type) { _type = type; }
 
-        void send_input(int8_t type, int8_t button, int16_t value) {
-            if ((button >= 1 || button <= 10) && value < 1) {
+        void send_input(int8_t type, int8_t button, int16_t value, uint8_t pressed) {
+            /*if (type == 0 || button == 0) {
                 return;
-            }
+            }*/
+
+            /*if ((button >= 1 || button <= 25) && value < 1) {
+                return;
+            }*/
 
             Serial.print("<");
             Serial.print(type);
             Serial.print(",");
             Serial.print(button);
-            if (value > 0) {
-                Serial.print(",");
-                Serial.print(value);
-            }
+            Serial.print(",");
+            Serial.print(value);
+            Serial.print(",");
+            Serial.print(pressed);
             Serial.println(">");
-            Serial.flush();
+            //clear_input();
+            //Serial.flush();
             delay(5);
         }
 

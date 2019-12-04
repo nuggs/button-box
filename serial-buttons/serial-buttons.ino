@@ -1,5 +1,4 @@
 
-
 #include <Bounce2.h>
 #include "mcu-io.h"
 #include "input.h"
@@ -35,8 +34,6 @@ void setup() {
     button_eight.begin();
     button_nine.begin();
     button_ten.begin();
-
-    pinMode(LED_BUILTIN, OUTPUT);
 }
 
 void loop() {

@@ -55,17 +55,23 @@
 
 #define MAX_BUTTON_INPUTS       26
 
+#define PRESSED                 1
+#define RELEASED                0
+
 /*
  * This is for sending bytes to the USB MCU or whatever
  * I don't remember this lingo anymore...  I forgot
  * what I was doing it was so long ago I was doing this.
+ * 
+ * Also, this isn't in use at the moment...  Not even sure
+ * what I was doing when I was passing arguments to update.
  */
 const char button_flags[MAX_BUTTON_INPUTS] = {
     0, /* We don't care about this one */
 
     /* two middle rows */
-    (0<<0), (0<<1), (1<<2), (1<<3), (1<<4),
-    (1<<5), (1<<6), (1<<7), (1<<8), (1<<9),
+    (0<<0), (1<<0), (1<<1), (1<<2), (1<<3),
+    (1<<4), (1<<5), (1<<6), (1<<7), (1<<8),
 
     /* top row of switches */
     0, 0, 0, 0, 0, 0,
@@ -150,14 +156,16 @@ class Input {
 
             if (state != _state) {
                 // set state change to release button
-                digitalWrite(LED_BUILTIN, LOW);
                 _state = state;
+                _handler.send_input(_type, _button, 0, RELEASED);
             }
 
             if (_state == LOW) {
+                if (_button == 0) {
+                    return;
+                }
                 // shit, button press, we need to communicate with the USB MCU
-                _handler.send_input(_type, _button, 0);
-                pinMode(LED_BUILTIN, OUTPUT);
+                _handler.send_input(_type, _button, 0, PRESSED);
             }
         }
 
