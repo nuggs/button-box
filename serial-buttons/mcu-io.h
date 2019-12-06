@@ -50,14 +50,6 @@ class input_data {
         void set_type(int8_t type) { _type = type; }
 
         void send_input(int8_t type, int8_t button, int16_t value, uint8_t pressed) {
-            /*if (type == 0 || button == 0) {
-                return;
-            }*/
-
-            /*if ((button >= 1 || button <= 25) && value < 1) {
-                return;
-            }*/
-
             Serial.print("<");
             Serial.print(type);
             Serial.print(",");
@@ -67,9 +59,6 @@ class input_data {
             Serial.print(",");
             Serial.print(pressed);
             Serial.println(">");
-            //clear_input();
-            //Serial.flush();
-            delay(5);
         }
 
         void receive_input(char input) {

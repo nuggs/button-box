@@ -87,12 +87,10 @@ const uint8_t INPUT_BUTTON  = 2;
 const uint8_t INPUT_TOGGLE  = 3;
 const uint8_t INPUT_ENCODER = 4;
 
-const unsigned long MAX_QUIET_TIME  = 5000;
-unsigned long previous_ms           = 0;
-
 class Input {
     private:
-        bool _state;
+        bool    _state;
+        bool    _sent;
         uint8_t _pin;
         uint8_t _type;
         uint8_t _mode;
@@ -142,35 +140,38 @@ class Input {
             }
         }
 
-        void update(char data) {
-            update_button();
-        }
-
-        void update_button(void) {
+        void update() {
             Debounce.update();
             int state = Debounce.read();
 
-            if (_type != INPUT_BUTTON) {
-                return;
-            }
+            switch(_type) {
+                case INPUT_BUTTON:
+                    if (state != _state) {
+                        // set state change to release button
+                        _state = state;
+                        if (_sent == true) {
+                            _handler.send_input(_type, _button, 0, RELEASED);
+                            _sent = false;
+                        }
+                    }
+    
+                    if (_state == LOW) {
+                        if (_button == 0) {
+                            return;
+                        }
 
-            if (state != _state) {
-                // set state change to release button
-                _state = state;
-                _handler.send_input(_type, _button, 0, RELEASED);
-            }
-
-            if (_state == LOW) {
-                if (_button == 0) {
-                    return;
-                }
-                // shit, button press, we need to communicate with the USB MCU
-                _handler.send_input(_type, _button, 0, PRESSED);
+                        if (_sent == false) {
+                            // shit, button press, we need to communicate with the USB MCU
+                            _handler.send_input(_type, _button, 0, PRESSED);
+                            _sent = true;
+                        }
+                    }
+                break;
+                default: break;
             }
         }
 
         void receive_input(char input) {
             _handler.receive_input(input);
         }
-
 };

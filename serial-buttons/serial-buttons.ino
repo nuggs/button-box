@@ -1,3 +1,79 @@
+/*
+ * FastLED stuff for later.
+
+#include <FastLED.h>
+#define NUM_LEDS 60
+#define DATA_PIN 2
+CRGB leds[NUM_LEDS];
+
+CRGBPalette16 currentPalette;
+TBlendType    currentBlending;
+
+...setup()...
+
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+<-
+
+...loop()...
+    ChangePalettePeriodically();
+    static uint8_t startIndex = 0;
+    startIndex = startIndex + 1; * motion speed *
+    
+    FillLEDsFromPaletteColors( startIndex);
+    FastLED.show(); 
+    delay(30); 
+<-
+
+
+void FillLEDsFromPaletteColors( uint8_t colorIndex)
+{
+    uint8_t brightness = 255;
+    
+    for( int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);
+        colorIndex += 3;
+    }
+}
+
+void ChangePalettePeriodically()
+{
+    uint8_t secondHand = (millis() / 1000) % 60;
+    static uint8_t lastSecond = 99;
+    
+    if( lastSecond != secondHand) {
+        lastSecond = secondHand;
+        if( secondHand ==  0)  { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
+        if( secondHand == 10)  { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
+        if( secondHand == 15)  { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
+        if( secondHand == 20)  { SetupPurpleAndGreenPalette();             currentBlending = LINEARBLEND; }
+        if( secondHand == 25)  { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; }
+        if( secondHand == 40)  { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 45)  { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
+    }
+}
+
+// This function fills the palette with totally random colors.
+void SetupTotallyRandomPalette()
+{
+    for( int i = 0; i < 16; i++) {
+        currentPalette[i] = CHSV( random8(), 255, random8());
+    }
+}
+
+// This function sets up a palette of purple and green stripes.
+void SetupPurpleAndGreenPalette()
+{
+    CRGB purple = CHSV( HUE_PURPLE, 255, 255);
+    CRGB green  = CHSV( HUE_GREEN, 255, 255);
+    CRGB black  = CRGB::Black;
+    
+    currentPalette = CRGBPalette16(
+                                   green,  green,  black,  black,
+                                   purple, purple, black,  black,
+                                   green,  green,  black,  black,
+                                   purple, purple, black,  black );
+}
+ */
 
 #include <Bounce2.h>
 #include "mcu-io.h"
@@ -37,14 +113,14 @@ void setup() {
 }
 
 void loop() {
-    button_one.update(button_flags[BUTTON_MID_ONE]);
-    button_two.update(button_flags[BUTTON_MID_TWO]);
-    button_three.update(button_flags[BUTTON_MID_THREE]);
-    button_four.update(button_flags[BUTTON_MID_FOUR]);
-    button_five.update(button_flags[BUTTON_MID_FIVE]);
-    button_six.update(button_flags[BUTTON_MID_SIX]);
-    button_seven.update(button_flags[BUTTON_MID_SEVEN]);
-    button_eight.update(button_flags[BUTTON_MID_EIGHT]);
-    button_nine.update(button_flags[BUTTON_MID_NINE]);
-    button_ten.update(button_flags[BUTTON_MID_TEN]);
+    button_one.update();
+    button_two.update();
+    button_three.update();
+    button_four.update();
+    button_five.update();
+    button_six.update();
+    button_seven.update();
+    button_eight.update();
+    button_nine.update();
+    button_ten.update();
 }

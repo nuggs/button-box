@@ -3,7 +3,7 @@
 #include <HID-Settings.h>
 #include "mcu-io.h"
 
-input_data handler;
+input_data      handler;
 
 /*void show_input_data(void) {
     Serial.print("Recieved: ");
@@ -20,7 +20,7 @@ void setup() {
 
 void loop() {
     handler.receive_input();
-
+    
     if (handler.buttons[handler.get_button()].get_pressed() == false) {
         Gamepad.release(handler.get_button());
     }
