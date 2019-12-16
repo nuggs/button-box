@@ -61,24 +61,33 @@ class input_data {
             Serial.println(">");
         }
 
-        void receive_input(char input) {
-            if (input == END_MARKER) {
-                is_reading = false;
-                parse_data();
-                input_buffer[bytes_received] = 0;
-            }
+        void receive_input(void) {
+            char rc;
 
-            if (is_reading) {
-                input_buffer[bytes_received] = input;
-                bytes_received++;
-                if (bytes_received == BUFFER_SIZE) {
-                    bytes_received = BUFFER_SIZE - 1;
+            while (Serial1.available() > 0) {
+                rc = Serial1.read();
+
+                /* Ignore anything that isn't what we want */
+                if (is_reading == false && rc != START_MARKER) {
+                    break;
                 }
-            }
 
-            if (input == START_MARKER) {
-                bytes_received = 0;
-                is_reading = true;
+                if (is_reading == true) {
+                    if (rc != END_MARKER) {
+                        input_buffer[bytes_received] = rc;
+                        bytes_received++;
+                        if (bytes_received >= BUFFER_SIZE) {
+                            bytes_received = BUFFER_SIZE - 1;
+                        }
+                    } else {
+                        parse_data();
+                        input_buffer[bytes_received] = '\0'; // terminate the string
+                        is_reading = false;
+                        bytes_received = 0;
+                    }
+                } else if (rc == START_MARKER) {
+                    is_reading = true;
+                }
             }
         }
 

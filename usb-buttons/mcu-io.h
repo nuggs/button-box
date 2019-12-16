@@ -35,6 +35,7 @@ class button_list {
         bool get_pressed(void) { return _pressed; }
 
         bool _pressed;
+        uint8_t passes = 0;
 };
 
 class input_data {
@@ -47,7 +48,7 @@ class input_data {
         int8_t _type                    = 0;
 
     public:
-        button_list buttons[26];
+        button_list buttons[38];
         const char START_MARKER         = '<';
         const char END_MARKER           = '>';
 
@@ -66,8 +67,6 @@ class input_data {
         int8_t get_type() { return _type; }
         void set_type(int8_t type) { _type = type; }
 
-        bool buffer_null(void) { if (input_buffer == '\0') { return true; } return false; }
-
         void send_input(int8_t type, int8_t button, int16_t value) {
             Serial.print("<");
             Serial.print(type);
@@ -84,7 +83,6 @@ class input_data {
             char rc;
 
             while (Serial1.available() > 0) {
-                //clear_input();
                 rc = Serial1.read();
 
                 /* Ignore anything that isn't what we want */
@@ -132,11 +130,9 @@ class input_data {
             input_stream = strtok(NULL, ",");
             pressed = atoi(input_stream);
 
-            if (pressed == 1 && _button != 0) {
+            if (pressed != 0) {// && (_button != 0 && _value != 0)) {
                 buttons[_button].set_pressed(true);
-            }
-
-            if (pressed == 0 && _button != 0) {
+            } else {
                 buttons[_button].set_pressed(false);
             }
         }

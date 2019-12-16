@@ -17,122 +17,132 @@
  */
 
 /*
- * Middle row of buttons
+ * three toggle switches
  */
-#define BUTTON_MID_ONE          1
-#define BUTTON_MID_TWO          2
-#define BUTTON_MID_THREE        3
-#define BUTTON_MID_FOUR         4
-#define BUTTON_MID_FIVE         5
-#define BUTTON_MID_SIX          6
-#define BUTTON_MID_SEVEN        7
-#define BUTTON_MID_EIGHT        8
-#define BUTTON_MID_NINE         9
-#define BUTTON_MID_TEN          10
+#define TOGGLE_ONE              1
+#define TOGGLE_TWO              2
+#define TOGGLE_THREE            3
 
 /*
  * top set of momentary switches, two inputs each
  */
-#define SWITCH_ONE_ONE          11
-#define SWITCH_ONE_TWO          12
-#define SWITCH_TWO_ONE          13
-#define SWITCH_TWO_TWO          14
-#define SWITCH_THREE_ONE        15
-#define SWITCH_THREE_TWO        16
-#define SWITCH_FOUR_ONE         17
-#define SWITCH_FOUR_TWO         18
-#define SWITCH_FIVE_ONE         19
-#define SWITCH_FIVE_TWO         20
-#define SWITCH_SIX_ONE          21
-#define SWITCH_SIX_TWO          22
+#define SWITCH_ONE_ONE          4
+#define SWITCH_ONE_TWO          5
+#define SWITCH_TWO_ONE          6
+#define SWITCH_TWO_TWO          7
+#define SWITCH_THREE_ONE        8
+#define SWITCH_THREE_TWO        9
+#define SWITCH_FOUR_ONE         10
+#define SWITCH_FOUR_TWO         11
+#define SWITCH_FIVE_ONE         12
+#define SWITCH_FIVE_TWO         13
+#define SWITCH_SIX_ONE          14
+#define SWITCH_SIX_TWO          15
 
 /*
- * three toggle switches
+ * Middle row of buttons
  */
-#define TOGGLE_ONE              23
-#define TOGGLE_TWO              24
-#define TOGGLE_THREE            25
+#define BUTTON_MID_ONE          16
+#define BUTTON_MID_TWO          17
+#define BUTTON_MID_THREE        18
+#define BUTTON_MID_FOUR         19
+#define BUTTON_MID_FIVE         20
+#define BUTTON_MID_SIX          21
+#define BUTTON_MID_SEVEN        22
+#define BUTTON_MID_EIGHT        23
+#define BUTTON_MID_NINE         24
+#define BUTTON_MID_TEN          25
 
-#define MAX_BUTTON_INPUTS       26
+#define ENCODER_ONE_PUSH        26 // This is on pin 49 I think
+#define ENCODER_TWO_PUSH        27
+#define ENCODER_THREE_PUSH      28
+#define ENCODER_FOUR_PUSH       29
 
-#define PRESSED                 1
-#define RELEASED                0
+#define MAX_BUTTON_INPUTS       32
 
 /*
- * This is for sending bytes to the USB MCU or whatever
- * I don't remember this lingo anymore...  I forgot
- * what I was doing it was so long ago I was doing this.
- * 
- * Also, this isn't in use at the moment...  Not even sure
- * what I was doing when I was passing arguments to update.
+ * These aren't used yet.
+ * In the future, it will either be a button press
+ * or send the encoding info as a slider or something.
  */
-const char button_flags[MAX_BUTTON_INPUTS] = {
-    0, /* We don't care about this one */
+#define ENCODER_ONE             1
+#define ENCODER_TWO             2
+#define ENCODER_THREE           3
+#define ENCODER_FOUR            4
 
-    /* two middle rows */
-    (0<<0), (1<<0), (1<<1), (1<<2), (1<<3),
-    (1<<4), (1<<5), (1<<6), (1<<7), (1<<8),
+#define ENCODER_ONE_HIGH        1
+#define ENCODER_ONE_LOW         2
+#define ENCODER_TWO_HIGH        3
+#define ENCODER_TWO_LOW         4
+#define ENCODER_THREE_HIGH      5
+#define ENCODER_THREE_LOW       6
+#define ENCODER_FOUR_HIGH       7
+#define ENCODER_FOUR_LOW        8
 
-    /* top row of switches */
-    0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0,
+#define TOGGLE_MODE_RELEASE     1
+#define TOGGLE_MODE_HOLD        2
 
-    /* toggle switches */
-    0, 0, 0
-};
-
-const uint8_t INPUT_NONE    = 0;
-const uint8_t INPUT_AXIS    = 1;
-const uint8_t INPUT_BUTTON  = 2;
-const uint8_t INPUT_TOGGLE  = 3;
-const uint8_t INPUT_ENCODER = 4;
+const uint8_t INPUT_NONE        = 0;
+const uint8_t INPUT_AXIS        = 1;
+const uint8_t INPUT_BUTTON      = 2;
+const uint8_t INPUT_TOGGLE      = 3;
+const uint8_t INPUT_ENCODER     = 4;
 
 class Input {
     private:
-        bool    _state;
-        bool    _sent;
+        bool    _state          = false;
+        bool    _sent           = false;
+        bool    _encoder_sent   = false;
+
         uint8_t _pin;
+        uint8_t _pinb;
+        uint8_t _pinc;
         uint8_t _type;
         uint8_t _mode;
         uint8_t _button;
+        uint8_t _button_two;
+        int16_t _last_encoder_value;
+        int16_t _encoder_value;
+        uint8_t _encoder_passes;
+
+        /* This is for the toggle switches */
+        bool _toggle_active     = false;
+        uint8_t _toggle_mode    = TOGGLE_MODE_RELEASE;
 
         int16_t _min_range  = 0;
         int16_t _max_range  = 0;
 
         Bounce Debounce;
+        ClickEncoder *encoder;
+        ClickEncoder::Button encoder_button;
         input_data _handler;
 
     public:
-        Input(uint8_t pin, uint8_t type, uint8_t button, char mode): _pin(pin), _button(button), _type(type), _mode(mode) {}
+        Input(uint8_t pina, uint8_t pinb, uint8_t pinc, uint8_t type, uint8_t button, uint8_t button_two, char mode): _pin(pina), _pinb(pinb), _pinc(pinc), _button(button), _button_two(button_two), _type(type), _mode(mode) {}
 
         void begin(void) {
-            pinMode(_pin, _mode);
-
             switch (_type) {
                 case INPUT_BUTTON:
+                    pinMode(_pin, _mode);
                     Debounce = Bounce();
                     Debounce.attach(_pin);
-                    Debounce.interval(5);
+                    Debounce.interval(15);      /* Change to 5 again...  maybe... */
                     _state = Debounce.read();
                 break;
                 case INPUT_AXIS:
                     /*
-                     * Handle axis...  We don't have those for this...
+                     * Handle axis...  We don't have those for this...  yet...
                      */
                 break;
                 case INPUT_TOGGLE:
-                    /*
-                     * This is for toggle switches.  I imagine
-                     * some games will one a press for on and
-                     * then another for off.  So we'll either
-                     * send and keep it pressed until released
-                     * or send a press when we toggle it on and then
-                     * send it again when we toggle it off.
-                     */
-                    
+                    pinMode(_pin, _mode);
+                    Debounce = Bounce();
+                    Debounce.attach(_pin);
+                    Debounce.interval(15);
+                    _state = Debounce.read();
                 break;
                 case INPUT_ENCODER:
-                    /* handle encoders here */
+                    encoder = new ClickEncoder(_pin, _pinb, _pinc, 4);
                 break;
                 default:
                     Serial.print("Some shit went wrong, call the cops\n");
@@ -141,29 +151,98 @@ class Input {
         }
 
         void update() {
-            Debounce.update();
-            int state = Debounce.read();
+            uint8_t state = 0;
 
             switch(_type) {
                 case INPUT_BUTTON:
+                    Debounce.update();
+                    state = Debounce.read();
                     if (state != _state) {
                         // set state change to release button
                         _state = state;
                         if (_sent == true) {
-                            _handler.send_input(_type, _button, 0, RELEASED);
+                            _handler.send_input(_type, _button, 0, 0);
                             _sent = false;
+                            break;
                         }
                     }
     
                     if (_state == LOW) {
                         if (_button == 0) {
-                            return;
+                            break;
                         }
 
                         if (_sent == false) {
-                            // shit, button press, we need to communicate with the USB MCU
-                            _handler.send_input(_type, _button, 0, PRESSED);
+                            _handler.send_input(_type, _button, 0, 1);
                             _sent = true;
+                            break;
+                        }
+                    }
+                break;
+                case INPUT_TOGGLE:
+                    Debounce.update();
+                    state = Debounce.read();
+                    if (state != _state) {
+                        _state = state;
+                        if (_sent == true) {
+                            _handler.send_input(_type, _button, 0, 0);
+                            _sent = false;
+                            break;
+                        }
+                    }
+    
+                    if (_state == LOW) {
+                        if (_button == 0) {
+                            break;
+                        }
+
+                        if (_sent == false) {
+                            _handler.send_input(_type, _button, 0, 1);
+                            _sent = true;
+                            break;
+                        }
+                    }
+                break;
+                case INPUT_ENCODER:
+                    encoder->service();
+                    _encoder_value += encoder->getValue();
+
+                    if (_encoder_sent == true) {
+                        _encoder_passes++;
+                        if (_encoder_passes >= 16) {
+                            _handler.send_input(_type, _button, _encoder_value < _last_encoder_value ? _button_two : _button_two+1, 0);
+                            _last_encoder_value = _encoder_value;
+                            _encoder_passes = 0;
+                            _encoder_sent = false;
+                        }
+                    }
+
+                    if (_encoder_value != _last_encoder_value && _encoder_sent == false) {
+                        _handler.send_input(_type, _button, _encoder_value <= _last_encoder_value ? _button_two : _button_two+1, 1);
+                        _encoder_sent = true;
+                    }
+
+                    encoder_button = encoder->getButton();
+                    if (encoder_button != ClickEncoder::Open) {
+                        const int encoder_buttons[] = {
+                            0, ENCODER_ONE_PUSH, ENCODER_TWO_PUSH, ENCODER_THREE_PUSH, ENCODER_FOUR_PUSH
+                        };
+                        switch (encoder_button) {
+                            case ClickEncoder::Pressed:
+                                if (_sent == false) {
+                                    _handler.send_input(INPUT_BUTTON, encoder_buttons[_button], 0, 1);
+                                    _sent = true;
+                                }
+                            break;
+                            case ClickEncoder::DoubleClicked:
+                            case ClickEncoder::Clicked:
+                            case ClickEncoder::Released:
+                                if (_sent == true) {
+                                    _handler.send_input(INPUT_BUTTON, encoder_buttons[_button], 0, 0);
+                                    _sent = false;
+                                }
+                            break;
+                            default: break;
                         }
                     }
                 break;
@@ -172,6 +251,6 @@ class Input {
         }
 
         void receive_input(char input) {
-            _handler.receive_input(input);
+            _handler.receive_input();
         }
 };
